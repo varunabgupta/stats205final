@@ -69,9 +69,9 @@ colnames(mat) <- c("4SFGA","4SGA","HF","NP","PS")
 ctable <- mat[-c(14,16),]
 chisq.test(ctable)
 
-mosaicplot(ctable, shade = T)
-assoc(ctable, shade = T, legend = T)
+# mosaic(ctable, shade = T)
 tctable <- t(ctable)
+# mosaic(tctable, shade = T)
 fit2 <- ca(tctable)
 plot(fit2)
 plot(fit2, mass = TRUE, contrib = "absolute", map = "rowgreen", arrows = c(FALSE, TRUE))
@@ -81,7 +81,6 @@ for (i in 1:nrow(ctable)) {
   temp <- ctable[-i,]
   to_graph[i] <- chisq.test(temp)
 }
-
 plot(1:31, to_graph, xlab = "Index", ylab = "Chi-Squared Value")
 text(1:31, to_graph, row.names(ctable), cex = 0.6, pos = 4, col = "red")
 
@@ -96,17 +95,33 @@ plot(1:31, to_graph, xlab = "Index", ylab = "Chi-Squared Value")
 text(1:31, to_graph, row.names(fin2gone), cex = 0.6, pos = 4, col = "red")
 
 
+# Removing genes that do not contribute heavily to Xs
+row.names(ctable[c(1,4,6:8,13,15:17,25,26,29),])
+chmod <- ctable[-c(1,4,6:8,13,15:17,25,26,29),]
+ct = t(chmod)
+mosaic(ct, shade = T)
+
+fit3 <- ca(ct)
+plot(fit3)
+plot(fit3, mass = TRUE, contrib = "absolute", map = "rowgreen", arrows = c(FALSE, TRUE))
+
+
+
 # Test of Independence
 gatagfib <- table(data$Gata1,data$Gfi1b)
 chisq.test(gatagfib) # They are dependent as expected
+assocplot(gatagfib, col = c("blue", "red"), main = "Association Plot of Binary Data", xlab = "Gata1", ylab = "Gfi1b")
 
 hoxb4sox7 <- table(data$HoxB4,data$Sox7)
 chisq.test(hoxb4sox7)
+assocplot(hoxb4sox7, col = c("blue", "red"), main = "Association Plot of Binary Data", xlab = "HoxB4", ylab = "Sox7")
 
 notch1ets1 <- table(data$Notch1,data$Ets1)
 chisq.test(notch1ets1)
+assocplot(notch1ets1, col = c("blue", "red"), main = "Association Plot of Binary Data", xlab = "Notch1", ylab = "Ets1")
 
 ergmyb <- table(data$Erg,data$Myb)
 chisq.test(ergmyb)
+assocplot(ergmyb, col = c("blue", "red"), main = "Association Plot of Binary Data", xlab = "Erg", ylab = "Myb")
 # correct p-value by 31C2 if we use conservative correction. Lower rejection rate
 ```
