@@ -1,0 +1,112 @@
+---
+title: "BinaryDataAnalysis"
+author: "Kapil Kanagal"
+date: "May 31, 2016"
+output: html_document
+---
+
+```{r}
+library(ca)
+library(vcd)
+
+data <- read.csv("CellGeneBinary.csv")
+gr4sfg=which(substr(data$X,1,5)=="4SFGA")
+gr4sf=which(substr(data$X,1,4)=="4SGA")
+gr1=which(substr(data$X,1,2)=="PS")
+gr2=which(substr(data$X,1,2)=="NP")
+gr3=which(substr(data$X,1,2)=="HF")
+colnb=rep(0, 1448)
+colnb[gr1] = 1
+colnb[gr2] = 2
+colnb[gr3] = 3
+colnb[gr4sf] = 4
+colnb[gr4sfg] = 5
+celltypes=as.factor(c("PS","NP","HF","4G","4GF")[colnb])
+
+gr4sfglen <- length(gr4sfg)
+gr4sflen <- length(gr4sf)
+gr1len <- length(gr1)
+gr2len <- length(gr2)
+gr3len <- length(gr3)
+
+# creates a matrix that will become a contingency table
+mat <- matrix(, nrow = ncol(data)-1, ncol = 5)
+for (x in 1:5) {
+  low = 0
+  high = 1
+  if (x == 1) { 
+    low = 0
+    high = gr4sfglen
+  }
+  else if (x == 2) {
+    low = gr4sfglen+1
+    high = gr4sfglen+gr4sflen
+    # sub = low:high
+  }
+  else if (x == 3) {
+    low = gr4sfglen+gr4sflen+1
+    high = gr4sfglen+gr4sflen+gr3len
+    # sub = low:high
+  }
+  else if (x == 4) {
+    low = gr4sfglen+gr4sflen+gr3len+1
+    high = gr4sfglen+gr4sflen+gr3len+gr2len
+    # sub = low:high
+  }
+  else {
+    low = gr4sfglen+gr4sflen+gr3len+gr2len+1
+    high = gr4sfglen+gr4sflen+gr3len+gr2len+gr1len
+    # sub = low:high
+  }
+  sub = low:high
+  for (y in 1:(ncol(data)-1)) {
+    mat[y,x] = sum(data[sub,y+1])
+  }
+}
+
+rownames(mat) <- colnames(data)[2:34]
+colnames(mat) <- c("4SFGA","4SGA","HF","NP","PS")
+ctable <- mat[-c(14,16),]
+chisq.test(ctable)
+
+mosaicplot(ctable, shade = T)
+assoc(ctable, shade = T, legend = T)
+tctable <- t(ctable)
+fit2 <- ca(tctable)
+plot(fit2)
+plot(fit2, mass = TRUE, contrib = "absolute", map = "rowgreen", arrows = c(FALSE, TRUE))
+
+to_graph <- rep(0,nrow(ctable))
+for (i in 1:nrow(ctable)) {
+  temp <- ctable[-i,]
+  to_graph[i] <- chisq.test(temp)
+}
+
+plot(1:31, to_graph, xlab = "Index", ylab = "Chi-Squared Value")
+text(1:31, to_graph, row.names(ctable), cex = 0.6, pos = 4, col = "red")
+
+
+fin2gone <- ctable[,3:5]
+to_graph <- rep(0,nrow(fin2gone))
+for (i in 1:nrow(fin2gone)) {
+  temp <- fin2gone[-i,]
+  to_graph[i] <- chisq.test(temp)
+}
+plot(1:31, to_graph, xlab = "Index", ylab = "Chi-Squared Value")
+text(1:31, to_graph, row.names(fin2gone), cex = 0.6, pos = 4, col = "red")
+
+
+# Test of Independence
+gatagfib <- table(data$Gata1,data$Gfi1b)
+chisq.test(gatagfib) # They are dependent as expected
+
+hoxb4sox7 <- table(data$HoxB4,data$Sox7)
+chisq.test(hoxb4sox7)
+
+notch1ets1 <- table(data$Notch1,data$Ets1)
+chisq.test(notch1ets1)
+
+ergmyb <- table(data$Erg,data$Myb)
+chisq.test(ergmyb)
+# correct p-value by 31C2 if we use conservative correction. Lower rejection rate
+```
