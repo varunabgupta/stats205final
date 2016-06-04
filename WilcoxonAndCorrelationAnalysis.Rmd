@@ -9,8 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 require(data.table)
 require(boot)
-rquire(corrplot)
-dataf <- read.csv("~/Downloads/nbt.3154-S3.csv")
+dataf <- read.csv("nbt.3154-S3.csv")
+celltypes <- read.csv("celltypes.csv")[, "x"]
 dataf[,"type"] <- celltypes
 ```
 
@@ -18,7 +18,7 @@ Wilcoxon analysis:
 ```{r}
 locs <- data.frame(gene = character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
 pvals <- data.frame(gene = character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
-lows <- data.frame(gene = par(mar = rep(0, 4))character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
+lows <- data.frame(gene = character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
 highs <- data.frame(gene = character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
 
 for (i in 2:47) {
@@ -77,7 +77,6 @@ png("~/Downloads/pvals.png")
 par(mar = rep(0, 4))
 pheatmap(pvals, cluster_row = FALSE, cluster_col = FALSE, color = heat.colors(1), breaks = c(0, 0.05/230, 1), labels_col = c("PS-NP", "NP-HF", "HF-4G", "HF-4GF", "4G-4GF"))
 dev.off()
-
 ```
 
 HF --> 4GF is continuing course, whereas HF --> 4G requires drastic increase in expression of endothelial genes and drastic decrease in expression of erythroid genes
@@ -105,7 +104,13 @@ Erythroid: none
 Correlation matrix:
 ```{r}
 M <- cor(dataf[,2:47])
+
+png("~/Downloads/CorrelationMatrix.png")
+par(mar = rep(0, 4))
+M <- cor(dataf[,2:47])
 corrplot(M, method = "circle")
+dev.off()
+
 ```
 
 Bootstrapped correlations:
