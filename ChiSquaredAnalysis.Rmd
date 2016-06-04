@@ -124,10 +124,4 @@ ergmyb <- table(data$Erg,data$Myb)
 chisq.test(ergmyb)
 assocplot(ergmyb, col = c("blue", "red"), main = "Association Plot of Binary Data", xlab = "Erg", ylab = "Myb")
 # correct p-value by 31C2 if we use conservative correction. Lower rejection rate
-
-cf <- function(d, i){
-	d2 <- d[i,]
-	return(cor(d2[,1], d2[,2]))
-}
-
 ```

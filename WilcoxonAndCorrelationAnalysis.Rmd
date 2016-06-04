@@ -1,0 +1,135 @@
+---
+title: "fjds;ajfksaj"
+author: "Varun Gupta"
+date: "May 31, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(data.table)
+require(boot)
+rquire(corrplot)
+dataf <- read.csv("~/Downloads/nbt.3154-S3.csv")
+dataf[,"type"] <- celltypes
+```
+
+Wilcoxon analysis:
+```{r}
+locs <- data.frame(gene = character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
+pvals <- data.frame(gene = character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
+lows <- data.frame(gene = par(mar = rep(0, 4))character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
+highs <- data.frame(gene = character(), onetwo = numeric(), twothree = numeric(), threefourg = numeric(), threefourgf = numeric(), fourgfourgf = numeric(), stringsAsFactors = FALSE)
+
+for (i in 2:47) {
+  gene <- colnames(data)[i]
+  locs[i-1, "gene"] <- gene
+  pvals[i-1, "gene"] <- gene
+  lows[i-1, "gene"] <- gene
+  highs[i-1, "gene"] <- gene
+  
+  onetwo <- wilcox.test(dataf[dataf$type == "PS", gene], dataf[dataf$type == "NP", gene], conf.int = TRUE)
+  locs[i-1, "onetwo"] <- onetwo$estimate
+  pvals[i-1, "onetwo"] <- onetwo$p.value
+  lows[i-1, "onetwo"] <- onetwo$conf.int[1]
+  highs[i-1, "onetwo"] <- onetwo$conf.int[2]
+  
+  twothree <- wilcox.test(dataf[dataf$type == "NP", gene], dataf[dataf$type == "HF", gene], conf.int = TRUE)
+  locs[i-1, "twothree"] <- twothree$estimate
+  pvals[i-1, "twothree"] <- twothree$p.value
+  lows[i-1, "twothree"] <- twothree$conf.int[1]
+  highs[i-1, "twothree"] <- twothree$conf.int[2]
+  
+  threefourg <- wilcox.test(dataf[dataf$type == "HF", gene], dataf[dataf$type == "4G", gene], conf.int = TRUE)
+  locs[i-1, "threefourg"] <- threefourg$estimate
+  pvals[i-1, "threefourg"] <- threefourg$p.value
+  lows[i-1, "threefourg"] <- threefourg$conf.int[1]
+  highs[i-1, "threefourg"] <- threefourg$conf.int[2]
+  
+  threefourgf <- wilcox.test(dataf[dataf$type == "HF", gene], dataf[dataf$type == "4GF", gene], conf.int = TRUE)
+  locs[i-1, "threefourgf"] <- threefourgf$estimate
+  pvals[i-1, "threefourgf"] <- threefourgf$p.value
+  lows[i-1, "threefourgf"] <- threefourgf$conf.int[1]
+  highs[i-1, "threefourgf"] <- threefourgf$conf.int[2]
+  
+  fourgfourgf <- wilcox.test(dataf[dataf$type == "4G", gene], dataf[dataf$type == "4GF", gene], conf.int = TRUE)
+  locs[i-1, "fourgfourgf"] <- fourgfourgf$estimate
+  pvals[i-1, "fourgfourgf"] <- fourgfourgf$p.value
+  lows[i-1, "fourgfourgf"] <- fourgfourgf$conf.int[1]
+  highs[i-1, "fourgfourgf"] <- fourgfourgf$conf.int[2]
+}
+
+rownames(locs) <- locs[, "gene"]
+locs <- locs[,-1]
+rownames(pvals) <- pvals[, "gene"]
+pvals <- pvals[,-1]
+rownames(lows) <- lows[, "gene"]
+lows <- lows[,-1]
+rownames(highs) <- highs[, "gene"]
+highs <- highs[,-1]
+
+png("~/Downloads/locs.png")
+par(mar = rep(0, 4))
+pheatmap(locs, cluster_row = FALSE, cluster_col = FALSE, color = heat.colors(12), labels_col = c("PS-NP", "NP-HF", "HF-4G", "HF-4GF", "4G-4GF"))
+dev.off()
+
+png("~/Downloads/pvals.png")
+par(mar = rep(0, 4))
+pheatmap(pvals, cluster_row = FALSE, cluster_col = FALSE, color = heat.colors(1), breaks = c(0, 0.05/230, 1), labels_col = c("PS-NP", "NP-HF", "HF-4G", "HF-4GF", "4G-4GF"))
+dev.off()
+
+```
+
+HF --> 4GF is continuing course, whereas HF --> 4G requires drastic increase in expression of endothelial genes and drastic decrease in expression of erythroid genes
+```{r}
+quantile(locs[,"threefourgf"])
+quantile(locs[,"threefourg"])
+```
+
+```{r}
+locs[,c("threefourg", "threefourgf")] > 1
+```
+Increases:
+Endothelial: Cdh5, Egfl7, Erg, Ets1, Ets2, Etv2, Etv6, Fli1, Hhex, HoxB4, Kr, Kit, Meis1, Notch1, Pecam1, Sox17, Sox7, Tbx20
+Erythroid: FoxH1, Fox04, Runx1
+```{r}
+locs[,c("threefourg", "threefourgf")] < -1
+
+
+locs[c("FoxH1", "FoxO4", "Runx1"),c("threefourg", "threefourgf")]
+```
+Decreases:
+Endothelial: Gata1, Gfi1b, HbbbH1, Ikaros, Itga2b, Myb, Nfe2, Runx1
+Erythroid: none
+
+Correlation matrix:
+```{r}
+M <- cor(dataf[,2:47])
+corrplot(M, method = "circle")
+```
+
+Bootstrapped correlations:
+```{r}
+cf <- function(d, i){
+	d2 <- d[i,]
+	return(cor(d2[,1], d2[,2]))
+}
+
+bootcorr1 <- boot(dataf[,c("Gfi1b", "Gata1")], cf, R=500)
+mean(bootcorr1$t)
+bootcorr1
+cor.test(dataf$Gfi1b, dataf$Gata1)
+bootcorr2 <- boot(dataf[,c("HoxB4", "Sox7")], cf, R=500)
+mean(bootcorr2$t)
+bootcorr2
+cor.test(dataf$HoxB4, dataf$Sox7)
+bootcorr3 <- boot(dataf[,c("Notch1", "Ets1")], cf, R=500)
+mean(bootcorr3$t)
+bootcorr3
+cor.test(dataf$Notch1, dataf$Ets1)
+bootcorr4 <- boot(dataf[,c("Erg", "Myb")], cf, R=500)
+mean(bootcorr4$t)
+bootcorr4
+cor.test(dataf$Erg, dataf$Myb)
+```
+We must adjust the p-values for the multiple comparison problem. However, the first three correlations are such that their p-values are essentially 0, so no adjustment is necessary. The fourth correlation estimate is insignificant under the traditional cut-off level of 0.05, so no adjustment is necessary. 
